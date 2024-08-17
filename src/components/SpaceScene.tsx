@@ -1,10 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/Addons.js';
-import { createScene } from '../utils/createScene';
-import { createCamera } from '../utils/createCamera';
-import { createRenderer } from '../utils/createRenderer';
+import { animateScene, cleanUp, handleResize, initializeScene } from '../utils/initializeScene';
 import Star from "../types/Star";
+
 
 interface SpaceSceneProps {
   width: string | number;
@@ -46,17 +44,18 @@ const SpaceScene: React.FC<SpaceSceneProps> = ({
     const widthValue = typeof width === 'number' ? width : mount.clientWidth;
     const heightValue = typeof height === 'number' ? height : mount.clientHeight;
 
-    const scene = createScene();
-    const camera = createCamera(widthValue, heightValue);
-    const renderer = createRenderer(widthValue, heightValue);
+    // Initialize the scene using the utility function
+    const sceneSetup = initializeScene(mount, {
+      width: widthValue,
+      height: heightValue,
+      minZoomDistance,
+      maxZoomDistance,
+    });
 
-    mount.appendChild(renderer.domElement);
+    const { scene, camera, renderer, controls } = sceneSetup;
 
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableZoom = true;
+    // Disable pan for OrbitControls
     controls.enablePan = false;
-    controls.minDistance = minZoomDistance;
-    controls.maxDistance = maxZoomDistance;
 
     // Use the Star class
     const star = new Star(starColor, starSize, starOpacity, starSpread, starCount);
@@ -65,28 +64,16 @@ const SpaceScene: React.FC<SpaceSceneProps> = ({
     const starPoints = new THREE.Points(star.geometry, star.material);
     scene.add(starPoints);
 
-    const animate = () => {
-      requestAnimationFrame(animate);
-      controls.update();
-      renderer.render(scene, camera);
-    };
+    // Set up the animation loop using the utility function
+    animateScene(sceneSetup);
 
-    animate();
-
-    const handleResize = () => {
-      const newWidth = mount.clientWidth;
-      const newHeight = mount.clientHeight;
-      camera.aspect = newWidth / newHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(newWidth, newHeight);
-    };
-
-    window.addEventListener('resize', handleResize);
+    // Set up the resize handler
+    const resizeHandler = () => handleResize(mount, camera, renderer);
+    window.addEventListener('resize', resizeHandler);
 
     return () => {
-      mount.removeChild(renderer.domElement);
-      renderer.dispose();
-      window.removeEventListener('resize', handleResize);
+      cleanUp(mount, renderer);
+      window.removeEventListener('resize', resizeHandler);
     };
   }, [width, height, starCount, starSize, starSpread, minZoomDistance, maxZoomDistance, starColor, starOpacity]);
 
