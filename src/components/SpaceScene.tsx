@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
-import { animateScene, cleanUp, handleResize, initializeScene } from '../utils/initializeScene';
+import { animateScene, cleanUp, handleResize, initializeScene } from '../utils/sceneUtils/initializeScene';
 import Star from "../types/Star";
 
 
