@@ -1,8 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { animateScene, cleanUp, handleResize, initializeScene } from '../utils/sceneUtils/initializeScene';
-import Star from "../types/Star";
-
+import Galaxy from "../types/Galaxy";
+import Planet from "../types/Planet";
 
 interface SpaceSceneProps {
   width: string | number;
@@ -17,7 +17,7 @@ interface SpaceSceneProps {
 }
 
 const defaultConfig = {
-  starCount: 10000,
+  starCount: 100000,
   starSize: 0.1,
   starSpread: 2000,
   minZoomDistance: 10,
@@ -55,14 +55,31 @@ const SpaceScene: React.FC<SpaceSceneProps> = ({
     const { scene, camera, renderer, controls } = sceneSetup;
 
     // Disable pan for OrbitControls
-    controls.enablePan = false;
+    controls.enablePan = true;
 
-    // Use the Star class
-    const star = new Star(starColor, starSize, starOpacity, starSpread, starCount);
-
-    // Add the star geometry and material to the scene
-    const starPoints = new THREE.Points(star.geometry, star.material);
+    // Add the Galaxy (stars) to the scene
+    const galaxy = new Galaxy(starSize, starOpacity, starSpread, starCount, []); // Empty array for texture paths
+    const starPoints = new THREE.Points(galaxy.geometry, galaxy.material);
     scene.add(starPoints);
+
+    // Define the textures for Neptune (or any other planet)
+    const planetTextures = {
+      surfaceTexture: '../assets/neptunemap.jpg',
+    };
+
+    // Add a directional light
+    const light = new THREE.DirectionalLight(0xffffff, 1);
+    light.position.set(1, 1, 1).normalize();
+    scene.add(light);
+
+    // Add a Planet to the center of the scene using the updated Planet class
+    const planet = new Planet(20, 32, 32, planetTextures, 0.01, 0x0077ff, 0.1, 0.9);
+    planet.mesh.position.set(0, 0, 0); // Position the planet at the origin (center)
+    scene.add(planet.mesh);
+
+    // Position the camera so it looks at the origin
+    camera.position.set(0, 0, 200); // Move the camera back along the z-axis
+    camera.lookAt(new THREE.Vector3(0, 0, 0)); // Ensure the camera is looking at the center
 
     // Set up the animation loop using the utility function
     animateScene(sceneSetup);
